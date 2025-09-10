@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Mantenimiento Agrícola">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="description" content="App para gestionar mantenimiento de tractores y maquinaria agrícola">
+    <title>Mantenimiento de Tractores - iOS</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚜</text></svg>">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc; color: #1e293b; line-height: 1.5;
+            -webkit-text-size-adjust: 100%; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        input[type="text"], input[type="number"], textarea { font-size: 16px !important; }
+        button, [role="button"] { -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1); touch-action: manipulation; }
+        
+        .app { min-height: 100vh; display: flex; flex-direction: column; }
+        .header { background: white; border-bottom: 1px solid #e2e8f0; padding: 1rem; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+        .header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .header p { font-size: 0.875rem; color: #64748b; }
+        .controls { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+        .search-box { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem; }
+        .button-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        
+        .btn { padding: 0.75rem 1rem; border: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; text-decoration: none; min-height: 44px; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-outline { background: white; color: #475569; border: 1px solid #d1d5db; }
+        .btn-outline:hover { background: #f8fafc; }
+        .btn-sm { padding: 0.5rem 0.75rem; font-size: 0.75rem; }
+        .btn-full { flex: 1; min-width: 120px; }
+        
+        .card { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); margin-bottom: 1rem; overflow: hidden; }
+        .card-header { padding: 1rem; border-bottom: 1px solid #f1f5f9; }
+        .card-content { padding: 1rem; }
+        .card-title { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; }
+        .card-description { color: #64748b; font-size: 0.875rem; }
+        
+        .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+        .badge-default { background: #f1f5f9; color: #475569; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        
+        .grid { display: grid; gap: 1rem; }
+        .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+        .stat-card { text-align: center; padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid #e2e8f0; }
+        .stat-number { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
+        .stat-label { font-size: 0.75rem; color: #64748b; }
+        .stat-blue { color: #2563eb; }
+        .stat-red { color: #dc2626; }
+        .stat-amber { color: #d97706; }
+        
+        .progress { width: 100%; height: 0.5rem; background: #e2e8f0; border-radius: 9999px; overflow: hidden; }
+        .progress-bar { height: 100%; background: #3b82f6; transition: width 0.3s ease; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; overflow-y: auto; }
+        .modal.show { display: flex; align-items: flex-start; justify-content: center; padding: 1rem; }
+        .modal-content { background: white; border-radius: 0.75rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; margin-top: 2rem; }
+        .modal-header { padding: 1.5rem 1.5rem 0; }
+        .modal-body { padding: 1.5rem; }
+        .modal-footer { padding: 0 1.5rem 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
+        .modal-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .modal-description { color: #64748b; font-size: 0.875rem; }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: #374151; }
+        .form-input { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem; }
+        .form-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .form-textarea { min-height: 100px; resize: vertical; }
+        
+        .task-item { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; margin-bottom: 0.5rem; }
+        .task-info { flex: 1; }
+        .task-name { font-weight: 500; margin-bottom: 0.25rem; }
+        .task-description { font-size: 0.75rem; color: #64748b; }
+        .task-status { display: flex; align-items: center; gap: 0.5rem; }
+        
+        .collapsible-header { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; cursor: pointer; padding: 0.5rem 0; user-select: none; }
+        .collapsible-content { display: none; }
+        .collapsible-content.show { display: block; }
+        .chevron { transition: transform 0.2s; }
+        .chevron.rotated { transform: rotate(90deg); }
+        
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .text-muted { color: #64748b; }
+        .font-bold { font-weight: bold; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .gap-2 { gap: 0.5rem; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .w-full { width: 100%; }
+        
+        @media (min-width: 768px) {
+            .controls { flex-direction: row; align-items: center; }
+            .search-box { max-width: 300px; }
+            .button-row { margin-left: auto; }
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1>🚜 Mantenimiento de Tractores</h1>
+            <p>Gestiona el mantenimiento de tu maquinaria agrícola</p>
+            
+            <div class="controls">
+                <input type="text" class="search-box" id="searchInput" placeholder="Buscar equipo...">
+                <div class="button-row">
+                    <button class="btn btn-secondary btn-full" id="toggleTasksBtn">
+                        <span id="toggleIcon">▼</span> Ocultar tareas
+                    </button>
+                    <button class="btn btn-primary" id="newEquipoBtn">+ Nuevo equipo</button>
+                    <button class="btn btn-outline" id="shareBtn">📤 Compartir</button>
+                    <button class="btn btn-outline" id="debugBtn" onclick="showDebugInfo()">🔧 Debug</button>
+                </div>
+            </div>
+        </header>
+
+        <main style="flex: 1; padding: 1rem;">
+            <div id="equiposList" class="grid">
+                <!-- Los equipos se cargarán aquí dinámicamente -->
+            </div>
+            
+            <div id="emptyState" class="card text-center" style="display: none;">
+                <div class="card-content">
+                    <h3 class="card-title">Sin equipos aún</h3>
+                    <p class="card-description">Agrega tu primer tractor con el botón "Nuevo equipo"</p>
+                </div>
+            </div>
+        </main>
+
+        <footer style="background: white; border-top: 1px solid #e2e8f0; padding: 1rem;">
+            <div class="text-center text-sm text-muted">
+                App de Mantenimiento Agrícola - Versión iOS
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal Nuevo Equipo -->
+    <div id="nuevoEquipoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Agregar equipo</h3>
+                <p class="modal-description">Registra un tractor o maquinaria con su horómetro actual</p>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" class="form-input" id="equipoNombre" placeholder="Tractor principal">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Modelo</label>
+                    <input type="text" class="form-input" id="equipoModelo" placeholder="Ej: Massey 4275">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Horómetro actual (h)</label>
+                    <input type="number" class="form-input" id="equipoHorometro" value="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notas</label>
+                    <textarea class="form-input form-textarea" id="equipoNotas" placeholder="Estado, accesorios, etc."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('nuevoEquipoModal')">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveEquipo()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===============================
+        // UTILIDADES
+        // ===============================
+        
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+        
+        function formatNumber(n) {
+            return new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 }).format(n);
+        }
+        
+        // Función mejorada para iOS
+        function loadState() {
+            try {
+                // Intentar múltiples claves
+                const keys = ['mantenimiento-tractores-ios', 'mantenimiento-tractores', 'mantenimiento'];
+                for (const key of keys) {
+                    const raw = localStorage.getItem(key);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        console.log('Datos cargados desde:', key, parsed);
+                        return parsed;
+                    }
+                }
+                console.log('No hay datos guardados, usando datos de ejemplo');
+                return null;
+            } catch (e) {
+                console.error('Error cargando datos:', e);
+                return null;
+            }
+        }
+        
+        function saveState(state) {
+            try {
+                const jsonString = JSON.stringify(state);
+                // Intentar múltiples claves
+                const keys = ['mantenimiento-tractores-ios', 'mantenimiento-tractores', 'mantenimiento'];
+                for (const key of keys) {
+                    try {
+                        localStorage.setItem(key, jsonString);
+                        console.log('Datos guardados en:', key);
+                        return true;
+                    } catch (e) {
+                        console.log('Error guardando en:', key, e);
+                    }
+                }
+                return false;
+            } catch (e) {
+                console.error('Error guardando datos:', e);
+                return false;
+            }
+        }
+        
+        function horasRestantes(tarea, horasActuales) {
+            const usado = Math.max(0, horasActuales - (tarea.ultimaEjecucionHoras || 0));
+            return tarea.intervaloHoras - usado;
+        }
+        
+        function estadoTarea(tarea, horasActuales) {
+            const restantes = horasRestantes(tarea, horasActuales);
+            if (restantes <= 0) return { estado: "Vencida", clase: "badge-danger" };
+            if (restantes <= tarea.intervaloHoras * 0.2) return { estado: "Próxima", clase: "badge-warning" };
+            return { estado: "OK", clase: "badge-success" };
+        }
+        
+        // ===============================
+        // DATOS INICIALES
+        // ===============================
+        
+        const seedData = {
+            equipos: [
+                {
+                    id: generateId(),
+                    nombre: "Tractor 1",
+                    modelo: "John Deere 6110M",
+                    horometro: 1425,
+                    notas: "Uso general en campo.",
+                    activo: true,
+                    historialHoras: [
+                        { fecha: new Date().toISOString(), horas: 1425, nota: "Actualización inicial" }
+                    ],
+                    tareas: [
+                        { 
+                            id: generateId(), 
+                            nombre: "Cambio de aceite motor", 
+                            intervaloHoras: 250, 
+                            ultimaEjecucionHoras: 1300, 
+                            descripcion: "Aceite 15W-40 + filtro", 
+                            recordatorios: true 
+                        },
+                        { 
+                            id: generateId(), 
+                            nombre: "Filtro de aire", 
+                            intervaloHoras: 500, 
+                            ultimaEjecucionHoras: 1000, 
+                            descripcion: "Revisar y soplar si aplica", 
+                            recordatorios: true 
+                        },
+                        { 
+                            id: generateId(), 
+                            nombre: "Engrase general", 
+                            intervaloHoras: 50, 
+                            ultimaEjecucionHoras: 1400, 
+                            descripcion: "Pernos y articulaciones", 
+                            recordatorios: true 
+                        }
+                    ]
+                }
+            ]
+        };
+        
+        // ===============================
+        // ESTADO DE LA APLICACIÓN
+        // ===============================
+        
+        let appState = null;
+        let currentEquipoId = null;
+        let tareasColapsadas = false;
+        
+        // Inicializar estado
+        function initializeApp() {
+            console.log('Inicializando aplicación...');
+            const savedState = loadState();
+            appState = savedState || seedData;
+            
+            // Verificar que el estado sea válido
+            if (!appState || !appState.equipos || !Array.isArray(appState.equipos)) {
+                console.log('Estado inválido, usando datos de ejemplo');
+                appState = seedData;
+            }
+            
+            console.log('Estado inicial:', appState);
+            renderEquipos();
+        }
+        
+        // ===============================
+        // FUNCIONES DE MODAL
+        // ===============================
+        
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('show');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+        
+        // ===============================
+        // FUNCIONES DE EQUIPOS
+        // ===============================
+        
+        function saveEquipo() {
+            const nombre = document.getElementById('equipoNombre').value.trim();
+            const modelo = document.getElementById('equipoModelo').value.trim();
+            const horometro = parseInt(document.getElementById('equipoHorometro').value) || 0;
+            const notas = document.getElementById('equipoNotas').value.trim();
+            
+            if (!nombre) {
+                alert('El nombre es obligatorio');
+                return;
+            }
+            
+            // Asegurar que appState existe
+            if (!appState) {
+                appState = { equipos: [] };
+            }
+            if (!appState.equipos) {
+                appState.equipos = [];
+            }
+            
+            const nuevoEquipo = {
+                id: generateId(),
+                nombre,
+                modelo,
+                horometro,
+                notas,
+                activo: true,
+                historialHoras: [{ fecha: new Date().toISOString(), horas: horometro, nota: "Registro inicial" }],
+                tareas: [
+                    { 
+                        id: generateId(), 
+                        nombre: "Cambio de aceite motor", 
+                        intervaloHoras: 250, 
+                        ultimaEjecucionHoras: horometro, 
+                        descripcion: "15W-40 + filtro", 
+                        recordatorios: true 
+                    },
+                    { 
+                        id: generateId(), 
+                        nombre: "Engrase general", 
+                        intervaloHoras: 50, 
+                        ultimaEjecucionHoras: horometro, 
+                        descripcion: "Puntos de engrase", 
+                        recordatorios: true 
+                    }
+                ]
+            };
+            
+            appState.equipos.unshift(nuevoEquipo);
+            const saved = saveState(appState);
+            
+            if (saved) {
+                renderEquipos();
+                closeModal('nuevoEquipoModal');
+                
+                // Limpiar formulario
+                document.getElementById('equipoNombre').value = '';
+                document.getElementById('equipoModelo').value = '';
+                document.getElementById('equipoHorometro').value = '0';
+                document.getElementById('equipoNotas').value = '';
+                
+                alert('Equipo guardado correctamente');
+            } else {
+                alert('Error al guardar el equipo');
+            }
+        }
+        
+        function deleteEquipo(equipoId) {
+            if (confirm('¿Eliminar este equipo y sus tareas?')) {
+                appState.equipos = appState.equipos.filter(e => e.id !== equipoId);
+                saveState(appState);
+                renderEquipos();
+            }
+        }
+        
+        // ===============================
+        // FUNCIONES DE COMPARTIR
+        // ===============================
+        
+        function generateReport() {
+            const fecha = new Date().toLocaleDateString('es-CL');
+            let reporte = `REPORTE DE MANTENIMIENTO DE TRACTORES\n`;
+            reporte += `Fecha: ${fecha}\n`;
+            reporte += `Generado desde: App iOS Mantenimiento Agrícola\n\n`;
+            reporte += `═══════════════════════════════════════\n\n`;
+            
+            appState.equipos.forEach((equipo, index) => {
+                reporte += `${index + 1}. ${equipo.nombre}\n`;
+                reporte += `   Modelo: ${equipo.modelo || 'No especificado'}\n`;
+                reporte += `   Horómetro: ${formatNumber(equipo.horometro)} horas\n`;
+                reporte += `   Estado: ${equipo.activo ? 'Activo' : 'Inactivo'}\n`;
+                
+                // Tareas vencidas y próximas
+                const tareasVencidas = equipo.tareas.filter(t => horasRestantes(t, equipo.horometro) <= 0);
+                const tareasProximas = equipo.tareas.filter(t => {
+                    const rest = horasRestantes(t, equipo.horometro);
+                    return rest > 0 && rest <= t.intervaloHoras * 0.2;
+                });
+                
+                if (tareasVencidas.length > 0) {
+                    reporte += `   ⚠️  TAREAS VENCIDAS (${tareasVencidas.length}):\n`;
+                    tareasVencidas.forEach(t => {
+                        reporte += `      • ${t.nombre} (${formatNumber(Math.abs(horasRestantes(t, equipo.horometro)))} h vencidas)\n`;
+                    });
+                }
+                
+                if (tareasProximas.length > 0) {
+                    reporte += `   🔔 TAREAS PRÓXIMAS (${tareasProximas.length}):\n`;
+                    tareasProximas.forEach(t => {
+                        reporte += `      • ${t.nombre} (${formatNumber(horasRestantes(t, equipo.horometro))} h restantes)\n`;
+                    });
+                }
+                
+                reporte += `\n`;
+            });
+            
+            reporte += `═══════════════════════════════════════\n`;
+            reporte += `Total equipos: ${appState.equipos.length}\n`;
+            reporte += `Total tareas vencidas: ${appState.equipos.reduce((acc, e) => acc + e.tareas.filter(t => horasRestantes(t, e.horometro) <= 0).length, 0)}\n`;
+            reporte += `Total tareas próximas: ${appState.equipos.reduce((acc, e) => acc + e.tareas.filter(t => {
+                const rest = horasRestantes(t, e.horometro);
+                return rest > 0 && rest <= t.intervaloHoras * 0.2;
+            }).length, 0)}\n`;
+            
+            return reporte;
+        }
+        
+        function shareReport() {
+            const reporte = generateReport();
+            const subject = `Reporte de Mantenimiento - ${new Date().toLocaleDateString('es-CL')}`;
+            const body = reporte + `\n\n---\nEste reporte fue generado automáticamente por la App de Mantenimiento Agrícola.`;
+            
+            // Intentar usar la API de compartir nativa
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Reporte de Mantenimiento Agrícola',
+                    text: reporte,
+                }).catch(console.error);
+            } else {
+                // Fallback: usar mailto
+                const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                window.location.href = mailtoLink;
+            }
+        }
+        
+        function showDebugInfo() {
+            const debugInfo = `
+DEBUG INFO:
+- App State: ${appState ? 'OK' : 'NULL'}
+- Equipos: ${appState && appState.equipos ? appState.equipos.length : 0}
+- LocalStorage disponible: ${typeof(Storage) !== "undefined" ? 'SÍ' : 'NO'}
+- Datos en localStorage: ${localStorage.getItem('mantenimiento-tractores-ios') ? 'SÍ' : 'NO'}
+- User Agent: ${navigator.userAgent}
+- Timestamp: ${new Date().toISOString()}
+            `;
+            
+            const action = confirm(debugInfo + '\n\n¿Quieres resetear la aplicación?');
+            if (action) {
+                resetApp();
+            }
+            
+            console.log('Debug Info:', {
+                appState,
+                localStorage: localStorage.getItem('mantenimiento-tractores-ios'),
+                userAgent: navigator.userAgent
+            });
+        }
+        
+        function resetApp() {
+            if (confirm('¿Resetear la aplicación? Esto borrará todos los datos.')) {
+                localStorage.removeItem('mantenimiento-tractores-ios');
+                localStorage.removeItem('mantenimiento-tractores');
+                localStorage.removeItem('mantenimiento');
+                appState = seedData;
+                saveState(appState);
+                renderEquipos();
+                alert('Aplicación reseteada');
+            }
+        }
+        
+        // ===============================
+        // RENDERIZADO
+        // ===============================
+        
+        function renderEquipos() {
+            console.log('Renderizando equipos...', appState);
+            
+            const equiposList = document.getElementById('equiposList');
+            const emptyState = document.getElementById('emptyState');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            // Verificar que appState y equipos existan
+            if (!appState || !appState.equipos || !Array.isArray(appState.equipos)) {
+                console.log('No hay equipos para mostrar');
+                equiposList.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            let equiposFiltrados = appState.equipos;
+            if (searchTerm) {
+                equiposFiltrados = appState.equipos.filter(equipo =>
+                    equipo.nombre.toLowerCase().includes(searchTerm) ||
+                    (equipo.modelo && equipo.modelo.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            if (equiposFiltrados.length === 0) {
+                equiposList.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            equiposList.style.display = 'grid';
+            emptyState.style.display = 'none';
+            
+            equiposList.innerHTML = equiposFiltrados.map(equipo => {
+                const tareasOrdenadas = [...equipo.tareas].sort((a, b) => {
+                    const aRest = horasRestantes(a, equipo.horometro);
+                    const bRest = horasRestantes(b, equipo.horometro);
+                    return aRest - bRest;
+                });
+                
+                const vencidas = tareasOrdenadas.filter(t => horasRestantes(t, equipo.horometro) <= 0).length;
+                const proximas = tareasOrdenadas.filter(t => {
+                    const r = horasRestantes(t, equipo.horometro);
+                    return r > 0 && r <= t.intervaloHoras * 0.2;
+                }).length;
+                
+                const progresoGlobal = (() => {
+                    if (tareasOrdenadas.length === 0) return 100;
+                    const ratios = tareasOrdenadas.map(t => {
+                        const usado = Math.max(0, equipo.horometro - t.ultimaEjecucionHoras);
+                        return Math.min(100, Math.round((usado / t.intervaloHoras) * 100));
+                    });
+                    const avg = ratios.reduce((a, b) => a + b, 0) / ratios.length;
+                    return 100 - avg;
+                })();
+                
+                return `
+                    <div class="card fade-in">
+                        <div class="card-header">
+                            <div class="card-title">
+                                🔧 ${equipo.nombre}
+                                <span class="badge ${equipo.activo ? 'badge-success' : 'badge-default'}">
+                                    ${equipo.activo ? 'Activo' : 'Inactivo'}
+                                </span>
+                            </div>
+                            <div class="card-description">${equipo.modelo || 'Modelo no indicado'}</div>
+                            
+                            <div class="button-row mt-2">
+                                <button class="btn btn-outline btn-sm btn-full" onclick="deleteEquipo('${equipo.id}')">
+                                    🗑️ Eliminar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="card-content">
+                            <!-- Stats -->
+                            <div class="grid grid-cols-3 gap-2 mb-4">
+                                <div class="stat-card">
+                                    <div class="stat-number stat-blue">${formatNumber(equipo.horometro)}</div>
+                                    <div class="stat-label">Horas</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number stat-red">${vencidas}</div>
+                                    <div class="stat-label">Vencidas</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number stat-amber">${proximas}</div>
+                                    <div class="stat-label">Próximas</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Progreso de salud -->
+                            <div class="mb-4">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm text-muted">Salud del equipo</span>
+                                    <span class="text-sm font-bold">${Math.max(0, Math.min(100, Math.round(progresoGlobal)))}%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: ${Math.max(0, Math.min(100, Math.round(progresoGlobal)))}%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tareas -->
+                            <div class="collapsible-header" onclick="toggleTareas('${equipo.id}')">
+                                <span class="chevron" id="chevron-${equipo.id}">${tareasColapsadas ? '▶' : '▼'}</span>
+                                <span>🔧 Tareas (${tareasOrdenadas.length})</span>
+                            </div>
+                            
+                            <div class="collapsible-content ${tareasColapsadas ? '' : 'show'}" id="tareas-${equipo.id}">
+                                ${tareasOrdenadas.length === 0 ? 
+                                    '<div class="text-center text-muted text-sm mt-2">Sin tareas. Agrega las que quieras controlar por horas.</div>' :
+                                    tareasOrdenadas.map(tarea => {
+                                        const rest = horasRestantes(tarea, equipo.horometro);
+                                        const estado = estadoTarea(tarea, equipo.horometro);
+                                        const usado = Math.max(0, equipo.horometro - tarea.ultimaEjecucionHoras);
+                                        const avance = Math.min(100, Math.round((usado / tarea.intervaloHoras) * 100));
+                                        
+                                        return `
+                                            <div class="task-item">
+                                                <div class="task-info">
+                                                    <div class="task-name">${tarea.nombre}</div>
+                                                    <div class="task-description">${tarea.descripcion || 'Sin descripción'}</div>
+                                                    <div class="text-xs text-muted mt-1">
+                                                        ${formatNumber(usado)}h usadas / ${formatNumber(tarea.intervaloHoras)}h intervalo
+                                                    </div>
+                                                    <div class="progress mt-1">
+                                                        <div class="progress-bar" style="width: ${avance}%"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="task-status">
+                                                    <span class="badge ${estado.clase}">${estado.estado}</span>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function toggleTareas(equipoId) {
+            const content = document.getElementById(`tareas-${equipoId}`);
+            const chevron = document.getElementById(`chevron-${equipoId}`);
+            
+            if (content.classList.contains('show')) {
+                content.classList.remove('show');
+                chevron.textContent = '▶';
+            } else {
+                content.classList.add('show');
+                chevron.textContent = '▼';
+            }
+        }
+        
+        // ===============================
+        // EVENT LISTENERS
+        // ===============================
+        
+        document.getElementById('newEquipoBtn').addEventListener('click', () => {
+            openModal('nuevoEquipoModal');
+        });
+        
+        document.getElementById('shareBtn').addEventListener('click', shareReport);
+        
+        document.getElementById('toggleTasksBtn').addEventListener('click', () => {
+            tareasColapsadas = !tareasColapsadas;
+            const icon = document.getElementById('toggleIcon');
+            const btn = document.getElementById('toggleTasksBtn');
+            
+            if (tareasColapsadas) {
+                icon.textContent = '▶';
+                btn.innerHTML = '<span id="toggleIcon">▶</span> Mostrar tareas';
+            } else {
+                icon.textContent = '▼';
+                btn.innerHTML = '<span id="toggleIcon">▼</span> Ocultar tareas';
+            }
+            
+            renderEquipos();
+        });
+        
+        document.getElementById('searchInput').addEventListener('input', renderEquipos);
+        
+        // Cerrar modales al hacer clic fuera
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                }
+            });
+        });
+        
+        // ===============================
+        // INICIALIZACIÓN
+        // ===============================
+        
+        // Esperar a que el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM cargado, inicializando app...');
+            initializeApp();
+        });
+        
+        // Fallback para navegadores que no soportan DOMContentLoaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+        
+        // Mostrar mensaje de bienvenida
+        console.log('🚜 App de Mantenimiento Agrícola cargada correctamente');
+        console.log('📱 Versión iOS optimizada');
+    </script>
+</body>
+</html>
